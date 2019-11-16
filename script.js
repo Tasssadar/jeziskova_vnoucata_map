@@ -22,6 +22,14 @@ function renderMarkers() {
     renderToMap();
 }
 
+function getWishLink(w) {
+    var res = "https://jeziskovavnoucata.rozhlas.cz/prani/";
+    res += (w.typ === "zážitek" ? "zazitek/?type=3" : "darek/?type=2");
+    res += "&town=" + encodeURIComponent(w.place);
+    res += "&fulltext=" + encodeURIComponent(w.thing);
+    return res;
+}
+
 function formatWish(wish) {
     var res = "";
     res += "<div><b>" + wish.name + "</b>";
@@ -33,7 +41,7 @@ function formatWish(wish) {
     if(wish.price)
         res += "<div>" + wish.price[0] +" až " + wish.price[1] + " Kč</div>";
     res += "<p>" + wish.text + "</p>";
-    res += '<a href="https://jeziskovavnoucata.rozhlas.cz/prani/venovat/' + wish.id + '" target="blank_">CHCI VĚNOVAT...</a>';
+    res += '<a href="' + getWishLink(wish) + '" target="blank_" class="pure-button pure-button-primary" style="font-size: 130%;">Najít na vnoučatech</a>';
     return res;
 }
 
