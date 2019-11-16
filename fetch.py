@@ -12,8 +12,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 Wish = namedtuple("Wish", [ "id", "typ", "name", "age", "thing", "text", "place", "price" ])
 
-
-
 def get_td_text(row, class_, suffixToRemove=None, contentToRemove=None):
     td = row.find("td", class_=class_)
     if not td:
@@ -107,10 +105,18 @@ def get_coords(place):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("output_file", help="Path to the JSON output")
+    parser.add_argument("-c", "--cache", help="Path to cache file for place coordinates", default="place_cache.json")
     args = parser.parse_args()
 
     placeWishMap = {}
     placeCoords = {}
+
+    try:
+        with open("place_cache.json", "r") as f:
+            placeCoords = json.load(f)
+    except Exception as e:
+        pass
+
     for typ in range(2, 4):
         more = True
         page = 1
@@ -121,7 +127,8 @@ if __name__ == "__main__":
     with ThreadPoolExecutor(max_workers=8) as ex:
         placeFutMap = {}
         for place in placeWishMap.keys():
-            placeFutMap[ex.submit(get_coords, place)] = place
+            if place not in placeCoords:
+                placeFutMap[ex.submit(get_coords, place)] = place
 
         for fut in as_completed(placeFutMap):
             place = placeFutMap[fut]
@@ -142,14 +149,20 @@ if __name__ == "__main__":
 
     result = []
     for place, coords in placeCoords.items():
+        if place not in placeWishMap:
+            continue
         wishes = placeWishMap[place]
         result.append({
             "name": place,
             "coords": coords,
             "wishes": [ w._asdict() for w in wishes ],
         })
+
     with open(args.output_file, "w") as f:
         json.dump({
             "timestamp": int(time.time()),
             "places": result,
         }, f)
+
+    with open("place_cache.json", "w") as f:
+        json.dump(placeCoords, f)
