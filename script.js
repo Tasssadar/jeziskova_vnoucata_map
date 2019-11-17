@@ -45,49 +45,101 @@ function formatWish(wish) {
     return res;
 }
 
-function renderToMap() {
-    var cbDarky = document.getElementById("cbDarky");
-    var cbZazitky = document.getElementById("cbZazitky");
+function getFiltersObject() {
+    var res = {
+        darky: document.getElementById("darky").checked,
+        zazitky: document.getElementById("zazitky").checked,
+        thingOp: document.getElementById("thingOp").value,
+        thing: document.getElementById("thing").value.trim().toLocaleLowerCase(),
+        price: parseInt(document.getElementById("price").value, 10),
+    };
+    var nodes = [];
+    for (var k in res) {
+        if (res.hasOwnProperty(k)) {
+            nodes.push(k + "=" + encodeURIComponent(res[k]));
+        }
+    }
+    res["query"] = nodes.join("&");
+    return res;
+}
 
+function setFiltersFromLocation() {
+    var search = window.location.search;
+    if(!search.startsWith("?") || window.location.search.length < 2)
+        return;
+    var params = search.substring(1).split("&");
+    for(var i = 0; i < params.length; ++i) {
+        var p = params[i];
+        var idx = p.indexOf("=")
+        if(idx === -1)
+            continue;
+        var name = p.substring(0, idx);
+        var value = p.substring(idx+1);
+        switch(name) {
+            case "darky":
+            case "zazitky":
+                document.getElementById(name).checked = (value == "true");
+                break;
+            default:
+                document.getElementById(name).value = value;
+                break;
+        }
+    }
+}
+
+function renderToMap() {
+    var filters = getFiltersObject();
+    history.replaceState(null, "", "?" + filters.query);
+
+    var wishCountTotal = 0;
+    var wishCountDisplayed = 0;
     for(var i = 0; i < gData.places.length; ++i) {
         var place = gData.places[i];
         var markers = L.markerClusterGroup();
+        wishCountTotal += place.wishes.length;
         for(var x = 0; x < place.wishes.length; ++x) {
             var wish = place.wishes[x];
+
+            if(filters.thing.length !== 0) {
+                var contains = wish.thing.toLocaleLowerCase().indexOf(filters.thing) !== -1;
+                if((filters.thingOp == "0") !== contains)
+                    continue;
+            }
+
+            if(filters.price !== -1 && (!wish.price || wish.price[0] !== filters.price)) {
+                continue;
+            }
+
             var extra = { };
             if(wish.typ === "zážitek") {
-                if(!cbZazitky.checked)
+                if(!filters.zazitky)
                     continue
                 extra["icon"] = GREEN_ICON;
-            } else if(!cbDarky.checked)
+            } else if(!filters.darky)
                 continue;
 
             var marker = L.marker(place.coords, extra);
             marker.bindPopup(formatWish(wish));
             markers.addLayer(marker);
+            ++wishCountDisplayed;
         }
         gMap.addLayer(markers);
         gMarkerLayers.push(markers);
     }
+
+    var gen = document.getElementById("generatedon");
+    gen.innerHTML = new Date(gData.timestamp*1000).toLocaleString() + ", " +
+        gData.places.length + " míst, <b>" + wishCountDisplayed + "</b>/" + wishCountTotal + " přání.";
 }
 
 function onDataLoad(req) {
     gData = JSON.parse(req.responseText);
-
-    var wishCount = 0;
-    for(var i = 0; i < gData.places.length; ++i) {
-        wishCount += gData.places[i].wishes.length;
-    }
-
-    var gen = document.getElementById("generatedon");
-    gen.innerText = "Poslední aktualizace " + new Date(gData.timestamp*1000).toLocaleString() + ", " +
-        gData.places.length + " míst, " + wishCount + " přání.";
-
-
     renderMarkers();
 }
 
 (function() {
+    setFiltersFromLocation();
+
     L.Map = L.Map.extend({
         openPopup: function(popup) {
             //        this.closePopup();  // just comment this

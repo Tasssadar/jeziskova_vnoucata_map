@@ -9,29 +9,77 @@
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" crossorigin=""/>
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" crossorigin=""/>
-    <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.1/build/buttons-min.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.1/build/pure-min.css"/>
 
     <style>
         #map {
-            position: absolute;
-            top: 50px;
-            left: 0;
-            right: 0;
-            bottom: 0;
             margin: 5px;
             border: 1px solid gray;
+            flex: 1;
+        }
+
+        body {
+            display: flex;
+            height: 100vh;
+            margin: 0px;
+            flex-direction: column;
+        }
+
+        .top-nav {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-top: 5px;
+        }
+
+        .top-nav div {
+            padding: 3px;
+            margin: 3px;
+        }
+
+        #generatedon {
+            font-size: 0.7em;
         }
     </style>
 </head>
 <body>
-    <label style="color: blue; font-weight: bold;"><input type="checkbox" onchange="renderMarkers();" checked id="cbDarky"> Dárky</label>
-    <label style="color: green; font-weight: bold;"><input type="checkbox" onchange="renderMarkers();" checked id="cbZazitky"> Zážitky</label>
+    <div class="top-nav">
+        <div style="border: 1px dashed lightgray;">Přání
+            <select onchange="renderMarkers();" id="thingOp">
+                <option value="0" checked>obsahuje</option>
+                <option value="1">neobsahuje</option>
+            </select>
+            <input type="text" placeholder="slovo" onchange="renderMarkers();" id="thing">
+        </div>
 
-    <span id="generatedon" style="margin-left: 15px;"></span>
+        <div style="border: 1px dashed lightgray;">Cena:
+            <select onchange="renderMarkers();" id="price">
+                <option value="-1" checked>nezáleží</option>
+                <option value="0">0-300</option>
+                <option value="300">300-500</option>
+                <option value="500">500-1000</option>
+                <option value="1000">1000-5000</option>
+                <option value="5000">nad 5000</option>
+            </select>
+        </div>
+
+        <div>
+            <label style="color: blue; font-weight: bold;">
+                <input type="checkbox" onchange="renderMarkers();" checked id="darky"> Dárky
+            </label>
+        </div>
+        <div>
+            <label style="color: green; font-weight: bold;">
+                <input type="checkbox" onchange="renderMarkers();" checked id="zazitky"> Zážitky
+            </label>
+        </div>
+
+        <div id="generatedon"></div>
+    </div>
  
 
     <div id="map"></div>
-    
+
     <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js"
         integrity="sha512-GffPMF3RvMeYyc1LWMHtK8EbPv0iNZ8/oTtHPx9/cc2ILxQ+u905qIwdpULaqDkyBKgOaB57QTMg7ztg8Jm2Og=="
         crossorigin=""></script>
