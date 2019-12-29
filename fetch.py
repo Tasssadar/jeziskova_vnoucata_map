@@ -57,7 +57,7 @@ def process_wish_page(typ, page, result):
         if req.status_code == 200:
             break
         print("Failed to download wishes #%d: %d %s", i, req.status_code, req.text, file=sys.stderr)
-    
+
     if req.status_code != 200:
         return
 
@@ -66,6 +66,9 @@ def process_wish_page(typ, page, result):
     table = bs.find("tbody", id="snippet-grid-tbody")
     rows = table.find_all("tr")
     for row in rows:
+        if not row.has_attr("data-id"):
+            return False
+
         name, age = get_name_age(row)
         w = Wish(
             id=int(row["data-id"]),
