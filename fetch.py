@@ -3,11 +3,13 @@ import sys
 import json
 import argparse
 import re
+import os
 import time
 
 from bs4 import BeautifulSoup
 from collections import namedtuple
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime
 
 
 Wish = namedtuple("Wish", [ "id", "typ", "name", "age", "thing", "text", "place", "price" ])
@@ -109,6 +111,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("output_file", help="Path to the JSON output")
     parser.add_argument("-c", "--cache", help="Path to cache file for place coordinates", default="place_cache.json")
+    parser.add_argument("-b", "--backup-dir", help="Path where to store the backups")
     args = parser.parse_args()
 
     placeWishMap = {}
@@ -120,7 +123,10 @@ if __name__ == "__main__":
     except Exception as e:
         pass
 
-    for typ in range(2, 4):
+    #for typ in range(2, 4):
+    # Skip "zážitky" for 2020
+    typ = 2
+    if True:
         more = True
         page = 1
         while more:
@@ -166,6 +172,14 @@ if __name__ == "__main__":
             "timestamp": int(time.time()),
             "places": result,
         }, f)
+
+    if args.backup_dir:
+        with open(os.path.join(args.backup_dir, datetime.now().strftime("%Y%m%dT%H%M.json")), "w") as f:
+            json.dump({
+                "timestamp": int(time.time()),
+                "places": result,
+            }, f)
+
 
     with open("place_cache.json", "w") as f:
         json.dump(placeCoords, f)
