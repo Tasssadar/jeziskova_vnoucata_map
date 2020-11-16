@@ -5,6 +5,7 @@ import argparse
 import re
 import os
 import time
+import string
 
 from bs4 import BeautifulSoup
 from collections import namedtuple
@@ -45,6 +46,44 @@ def get_price(row):
     elif val.startswith("nad "):
         return (int(m[0]), 1000000)
     return (int(m[0]), int(m[1]))
+
+num_re = re.compile(r'([0-9][0-9\s]+)\s')
+def get_num_from_text(txt):
+    m = num_re.search(txt)
+    if m:
+        number = int("".join([ c for c in m.group(1) if c in string.digits ]))
+        return number
+    return None
+
+def process_main_page():
+    for i in range(5):
+        req = requests.get("https://jeziskovavnoucata.rozhlas.cz/", timeout=30)
+        if req.status_code == 200:
+            break
+        print("Failed to download wishes #%d: %d %s", i, req.status_code, req.text, file=sys.stderr)
+
+    if req.status_code != 200:
+        return {}
+
+    res = {}
+
+    bs = BeautifulSoup(req.text, "html.parser")
+    money_bar = bs.select("#money-progress .progress-bar")
+    if len(money_bar) == 1:
+        money = get_num_from_text(money_bar[0].text)
+        if money is not None:
+            res["money"] = money
+
+    wish_bars = bs.select("#progress .progress-bar")
+    if len(wish_bars) == 3:
+        kinds = [ "completed", "inprogress", "free" ]
+        for idx, b in enumerate(wish_bars):
+            txt = "".join(b.findAll(text=True, recursive=False))
+            value = get_num_from_text(txt)
+            if value is None:
+                continue
+            res[kinds[idx]] = value
+    return res
 
 def process_wish_page(typ, page, result):
     typStr = "darek" if typ == 2 else "zazitek"
@@ -123,6 +162,8 @@ if __name__ == "__main__":
     except Exception as e:
         pass
 
+    main_stats = process_main_page()
+
     #for typ in range(2, 4):
     # Skip "zážitky" for 2020
     typ = 2
@@ -170,6 +211,7 @@ if __name__ == "__main__":
     with open(args.output_file, "w") as f:
         json.dump({
             "timestamp": int(time.time()),
+            "stats": main_stats,
             "places": result,
         }, f)
 
@@ -177,6 +219,7 @@ if __name__ == "__main__":
         with open(os.path.join(args.backup_dir, datetime.now().strftime("%Y%m%dT%H%M.json")), "w") as f:
             json.dump({
                 "timestamp": int(time.time()),
+                "stats": main_stats,
                 "places": result,
             }, f)
 
