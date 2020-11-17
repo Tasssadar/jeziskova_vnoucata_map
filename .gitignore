@@ -1,4 +1,6 @@
 data.json
+stats.json
 place_cache.json
 backup
 .mypy_cache
+__pycache__

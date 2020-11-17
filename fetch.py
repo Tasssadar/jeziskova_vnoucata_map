@@ -1,3 +1,7 @@
+#!/usr/bin/env python3
+
+from typing import TypedDict, Optional
+
 import requests
 import sys
 import json
@@ -14,6 +18,12 @@ from datetime import datetime
 
 
 Wish = namedtuple("Wish", [ "id", "typ", "name", "age", "thing", "text", "place", "price" ])
+
+class Stats(TypedDict, total=False):
+    money: Optional[int]
+    completed: Optional[int]
+    inprogress: Optional[int]
+    free: Optional[int]
 
 def get_td_text(row, class_, suffixToRemove=None, contentToRemove=None):
     td = row.find("td", class_=class_)
@@ -55,7 +65,7 @@ def get_num_from_text(txt):
         return number
     return None
 
-def process_main_page():
+def process_main_page() -> Stats:
     for i in range(5):
         req = requests.get("https://jeziskovavnoucata.rozhlas.cz/", timeout=30)
         if req.status_code == 200:
@@ -65,7 +75,7 @@ def process_main_page():
     if req.status_code != 200:
         return {}
 
-    res = {}
+    res: Stats = {}
 
     bs = BeautifulSoup(req.text, "html.parser")
     money_bar = bs.select("#money-progress .progress-bar")
@@ -82,7 +92,7 @@ def process_main_page():
             value = get_num_from_text(txt)
             if value is None:
                 continue
-            res[kinds[idx]] = value
+            res[kinds[idx]] = value #type: ignore
     return res
 
 def process_wish_page(typ, page, result):
@@ -150,7 +160,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("output_file", help="Path to the JSON output")
     parser.add_argument("-c", "--cache", help="Path to cache file for place coordinates", default="place_cache.json")
-    parser.add_argument("-b", "--backup-dir", help="Path where to store the backups")
+    parser.add_argument("-b", "--backup-dir", help="Path where to store the backups", default="backup")
     args = parser.parse_args()
 
     placeWishMap = {}
@@ -216,13 +226,13 @@ if __name__ == "__main__":
         }, f)
 
     if args.backup_dir:
+        os.makedirs(args.backupdir, exist_ok=True)
         with open(os.path.join(args.backup_dir, datetime.now().strftime("%Y%m%dT%H%M.json")), "w") as f:
             json.dump({
                 "timestamp": int(time.time()),
                 "stats": main_stats,
                 "places": result,
             }, f)
-
 
     with open("place_cache.json", "w") as f:
         json.dump(placeCoords, f)

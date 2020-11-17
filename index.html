@@ -1,9 +1,9 @@
 <html>
 <head>
-    <title>Mapa pro Ježíškova vnoučata</title>
+    <title>Statistiky pro Ježíškova vnoučata</title>
 
-    <meta property="og:description" content="Mapa usnadňující hledání přání pro Ježíškova vnoučata.">
-    <meta property="og:title" content="Mapa pro Ježíškova vnoučata">
+    <meta property="og:description" content="Statistika splněných přání od Ježíškových vnoučat.">
+    <meta property="og:title" content="Statistiky pro Ježíškova vnoučata">
     <meta property="og:image" content="https://mapaprovnoucata.eu/og-thumbnail.png">
     <meta property="og:url" content="https://mapaprovnoucata.eu/">
 
@@ -12,87 +12,82 @@
     <link rel="icon" href="favicon.ico" type="image/x-icon"/>
     <link rel="shortcut icon" href="favicon.ico" type="image/x-icon"/>
 
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css"
-        integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
-        crossorigin=""/>
+    <!-- Google Fonts -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic">
 
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" crossorigin=""/>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" crossorigin=""/>
-    <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.1/build/pure-min.css"/>
+    <!-- CSS Reset -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.css">
+
+    <!-- Milligram CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.4.1/milligram.css">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.css"
+        integrity="sha512-/zs32ZEJh+/EO2N1b0PEdoA10JkdC3zJ8L5FTiQu82LR9S/rOQNfQN7U59U9BC12swNeRAz3HSzIL2vpp4fv3w==" crossorigin="anonymous" />
+
 
     <style>
-        #map {
-            margin: 5px;
-            border: 1px solid gray;
-            flex: 1;
-        }
-
-        body {
-            display: flex;
-            height: 100vh;
-            margin: 0px;
-            flex-direction: column;
-        }
-
-        .top-nav {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            margin-top: 5px;
-        }
-
-        .top-nav div {
-            padding: 3px;
-            margin: 3px;
-        }
-
-        #generatedon {
+        .generatedon {
             font-size: 0.7em;
+        }
+
+        .chart {
+            width: 100%;
+        }
+        .row {
+            margin-top: 70px;
         }
     </style>
 </head>
 <body>
-    <div class="top-nav">
-        <div style="border: 1px dashed lightgray;">Přání
-            <select onchange="renderMarkers();" id="thingOp">
-                <option value="0" checked>obsahuje</option>
-                <option value="1">neobsahuje</option>
-            </select>
-            <input type="text" placeholder="slovo" onchange="renderMarkers();" id="thing">
+    <div class="container" style="margin-top: 30px; padding: 24px">
+        <div class="row">
+            <div class="column">
+                <p>Zůstaňte doma.</p>
+                <p>Je jasné, proč tu letos mapa není.</p>
+                <p>
+                    I tak ale můžete být <b>vnouče</b>! Doporučuji dárek odeslat pomocí firmy DHL, která
+                    pro Ježíškova vnoučata <a href="https://jeziskovavnoucata.rozhlas.cz/p/jak-byt-jeziskovo-vnouce">poskytuje dopravu zdarma</a>.
+                </p>
+            </div>
         </div>
 
-        <div style="border: 1px dashed lightgray;">Cena:
-            <select onchange="renderMarkers();" id="price">
-                <option value="-1" checked>nezáleží</option>
-                <option value="0">0-300</option>
-                <option value="300">300-500</option>
-                <option value="500">500-1000</option>
-                <option value="1000">1000-5000</option>
-                <option value="5000">nad 5000</option>
-            </select>
+        <div class="row" style="margin-top: 70px">
+            <div class="column">
+                <h1>Statistiky pro vnoučata</h1>
+                <p>
+                    Aby tu stránka tento rok nebyla zbytečně, připravil jsem alespoň průběžné statistiky toho, kolik přání bylo splněno a kolik peněz vybráno.
+                </p>
+
+                <p class="generatedon">Poslední aktualizace: <span id="generatedon"></span></p>
+            </div>
         </div>
 
-        <div>
-            <label style="color: blue; font-weight: bold;">
-                <input type="checkbox" onchange="renderMarkers();" checked id="darky"> Dárky
-            </label>
-        </div>
-        <div>
-            <label style="color: green; font-weight: bold;">
-                <input type="checkbox" onchange="renderMarkers();" checked id="zazitky"> Zážitky
-            </label>
+        <div class="row">
+            <div class="column">
+                <h3>Poměr splněných, rezervovaných a volných přání</h3>
+                <canvas id="wishes_stacked" class="chart"></canvas>
+            </div>
         </div>
 
-        <div id="generatedon"></div>
+        <div class="row">
+            <div class="column">
+                <h3>Počet splněných, rezervovaných a volných přání</h3>
+                <canvas id="wishes_count" class="chart"></canvas>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="column">
+                <h3>Vybrané peněžní příspěvky</h3>
+                <canvas id="money" class="chart"></canvas>
+            </div>
+        </div>
     </div>
  
 
-    <div id="map"></div>
-
-    <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js"
-        integrity="sha512-GffPMF3RvMeYyc1LWMHtK8EbPv0iNZ8/oTtHPx9/cc2ILxQ+u905qIwdpULaqDkyBKgOaB57QTMg7ztg8Jm2Og=="
-        crossorigin=""></script>
-    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
-    <script src="script.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js" integrity="sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ==" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/locale/cs.min.js" integrity="sha512-IoiX0A9PgmVQum1pgsK/IAJK2m42DUzTubgXur7Ll8ATEU7muGk2Y2gLwaxsBaB+Lbpz5pNBSuu4NxQC1Lx2Bg==" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js" integrity="sha512-d9xgZrVZpmmQlfonhQUvTR7lMPtO7NkZMkA0ABN3PHCbKA5nqylQ/yWlFAyY6hYgdF1Qh6nYiuADWwKB4C2WSw==" crossorigin="anonymous"></script>
+    <script src="script_stats.js"></script>
 </body>
 </html>
