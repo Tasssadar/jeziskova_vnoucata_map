@@ -226,7 +226,7 @@ if __name__ == "__main__":
         }, f)
 
     if args.backup_dir:
-        os.makedirs(args.backupdir, exist_ok=True)
+        os.makedirs(args.backup_dir, exist_ok=True)
         with open(os.path.join(args.backup_dir, datetime.now().strftime("%Y%m%dT%H%M.json")), "w") as f:
             json.dump({
                 "timestamp": int(time.time()),
