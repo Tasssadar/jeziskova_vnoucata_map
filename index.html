@@ -36,6 +36,15 @@
         .row {
             margin-top: 70px;
         }
+
+        .hoverinfo {
+            padding-left: 12px !important;
+            padding-right: 12px !important;
+        }
+        .hoverinfo strong {
+            margin-bottom: 8px !important;
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -82,12 +91,25 @@
                 <canvas id="money" class="chart"></canvas>
             </div>
         </div>
+
+        <div class="row">
+            <div class="column">
+                <h3>Odkud vnoučata posílají dary?</h3>
+                <p>Z FB příspěvku <a href="https://www.facebook.com/jeziskovavnoucata/posts/4005835656111020">https://www.facebook.com/jeziskovavnoucata/posts/4005835656111020</a></p>
+                <div id="worldmap" class="chart" style="position: relative;"></div>
+            </div>
+        </div>
+
+        <div class="row"> </div>
     </div>
- 
+
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js" integrity="sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ==" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/locale/cs.min.js" integrity="sha512-IoiX0A9PgmVQum1pgsK/IAJK2m42DUzTubgXur7Ll8ATEU7muGk2Y2gLwaxsBaB+Lbpz5pNBSuu4NxQC1Lx2Bg==" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js" integrity="sha512-d9xgZrVZpmmQlfonhQUvTR7lMPtO7NkZMkA0ABN3PHCbKA5nqylQ/yWlFAyY6hYgdF1Qh6nYiuADWwKB4C2WSw==" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js" integrity="sha512-oJp0DdQuQQrRsKVly+Ww6fAN1GwJN7d1bi8UubpEbzDUh84WrJ2CFPBnT4LqBCcfqTcHR5OGXFFhaPe3g1/bzQ==" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/1.6.20/topojson.min.js" integrity="sha512-lLzVYAFP6O6AJia/WjYVszSXRM5J1Lrk5o98+w9gmRhEHF4T2xGjdXA/X2XKF4WPJ82hyhdDeZ8h833wGD4Dhw==" crossorigin="anonymous"></script>
+    <script src="datamaps.world.min.js"></script>
     <script src="script_stats.js"></script>
 </body>
 </html>

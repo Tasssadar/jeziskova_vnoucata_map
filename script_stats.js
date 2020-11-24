@@ -1,6 +1,6 @@
 "use strict";
 
-function onDataLoad(req) {
+function onStatsDataLoad(req) {
     var stats = JSON.parse(req.responseText);
 
     document.getElementById("generatedon").innerText = moment(stats.timestamp, "X").format("D. MMMM Y, H:mm")
@@ -244,6 +244,40 @@ function prepareMoneyGraph(stats) {
     });
 }
 
+function onMapDataLoad(req) {
+    var locations = JSON.parse(req.responseText);
+
+    locations["CZE"] = {
+        fillKey: "master",
+    }
+
+    new Datamap({
+        element: document.getElementById("worldmap"),
+        projection: 'mercator',
+        geographyConfig: {
+            popupOnHover: true,
+            highlightOnHover: true,
+            popupTemplate: function(geography, data) {
+                var res = '<div class="hoverinfo"><strong>' + geography.properties.name + '</strong>';
+                if(data && data["messages"]) {
+                    res += "<ul>"
+                    data["messages"].forEach(function(m) {
+                        res += "<i>" + m + "</i><br>"
+                    })
+                    res += "</ul>"
+                }
+                return res + "</div>"
+            },
+        },
+        fills: {
+          defaultFill: "#ddd",
+          sent: "#169eda",
+          master: "#85b52d"
+        },
+        data: locations,
+      });
+}
+
 (function() {
     moment.locale("cs");
 
@@ -254,6 +288,11 @@ function prepareMoneyGraph(stats) {
 
     var req = new XMLHttpRequest();
     req.open("GET", "stats.json");
-    req.onload = onDataLoad.bind(this, req);
-    req.send(); 
+    req.onload = onStatsDataLoad.bind(this, req);
+    req.send();
+
+    req = new XMLHttpRequest();
+    req.open("GET", "locations.json");
+    req.onload = onMapDataLoad.bind(this, req);
+    req.send();
 })();

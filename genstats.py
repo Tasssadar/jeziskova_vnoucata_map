@@ -8,6 +8,8 @@ import os
 import sys
 import bz2
 import time
+import csv
+import html
 
 from datetime import datetime
 
@@ -24,6 +26,10 @@ class StatsResult(TypedDict):
     inprogress: List[TimePoint]
     free: List[TimePoint]
 
+class LocationData(TypedDict):
+    fillKey: str
+    messages: List[str]
+
 def load_json(path: str, results: List[Dict[str, Any]]) -> None:
     with open(path, "r") as f:
         data = json.load(f)
@@ -39,9 +45,22 @@ def write_json_bz2(backup_dir: str, data_backups: List[Dict[str, Any]]) -> None:
     try:
         with bz2.open(path, "wt") as f:
             json.dump(data_backups, f)
-    except Exception as e:
+    except Exception:
         os.remove(path)
         raise
+
+def process_locations() -> None:
+    res: Dict[str, LocationData] = {}
+    with open("locations.csv", "r") as f:
+        for r in csv.reader(f):
+            if r[1] in res:
+                res[r[1]]["messages"].append(html.escape(r[0]))
+            else:
+                res[r[1]] = { "fillKey": "sent", "messages": [ html.escape(r[0]) ] }
+
+    with open("locations.json", "w") as f:
+        json.dump(res, f)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -76,7 +95,7 @@ if __name__ == "__main__":
         "inprogress": [],
         "free": [],
     }
-    
+
     for d in data_backups:
         if "stats" not in d:
             continue
@@ -88,7 +107,7 @@ if __name__ == "__main__":
             val = stats.get(k, None)
             if val is not None:
                 stats_result[k].append({ "t": ts, "y": val}) # type:ignore
-    
+
     with open(args.output_file, "w") as f:
         json.dump(stats_result, f)
 
@@ -96,3 +115,5 @@ if __name__ == "__main__":
         write_json_bz2(args.backup_dir, data_backups)
         for p in loaded_files:
             os.remove(p)
+
+    process_locations()
