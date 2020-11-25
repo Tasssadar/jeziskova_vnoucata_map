@@ -10,10 +10,13 @@ import bz2
 import time
 import csv
 import html
+import requests
 
 from datetime import datetime
 
 from fetch import Stats
+
+LOCATIONS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQI5mKXOKUOTxB4xKu3WoC5qSyEBOeDi_E0E1iCHR50UcgYDHh4_FAXVdRCAviTkCNGNqnk25Dzg8nx/pub?output=csv"
 
 class TimePoint(TypedDict):
     y: int
@@ -51,12 +54,18 @@ def write_json_bz2(backup_dir: str, data_backups: List[Dict[str, Any]]) -> None:
 
 def process_locations() -> None:
     res: Dict[str, LocationData] = {}
-    with open("locations.csv", "r") as f:
-        for r in csv.reader(f):
-            if r[1] in res:
-                res[r[1]]["messages"].append(html.escape(r[0]))
-            else:
-                res[r[1]] = { "fillKey": "sent", "messages": [ html.escape(r[0]) ] }
+
+    req = requests.get(LOCATIONS_CSV_URL, stream=True)
+    req.raise_for_status()
+    req.encoding = 'utf-8'
+
+    reader = csv.reader(req.iter_lines(decode_unicode=True))
+    next(reader) # column headers
+    for code, comment in reader:
+        if code in res:
+            res[code]["messages"].append(html.escape(comment))
+        else:
+            res[code] = { "fillKey": "sent", "messages": [ html.escape(comment) ] }
 
     with open("locations.json", "w") as f:
         json.dump(res, f)
