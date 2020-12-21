@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from typing import TypedDict, Optional
+from typing import TypedDict, Optional, Set, Dict, List, Any, Tuple
 
 import requests
 import sys
@@ -12,6 +12,7 @@ import time
 import string
 
 from bs4 import BeautifulSoup
+from bs4.element import Tag
 from collections import namedtuple
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
@@ -25,7 +26,7 @@ class Stats(TypedDict, total=False):
     inprogress: Optional[int]
     free: Optional[int]
 
-def get_td_text(row, class_, suffixToRemove=None, contentToRemove=None):
+def get_td_text(row: Tag, class_: str, suffixToRemove: Optional[str] = None, contentToRemove: Optional[str] = None) -> str:
     td = row.find("td", class_=class_)
     if not td:
         return ""
@@ -38,7 +39,7 @@ def get_td_text(row, class_, suffixToRemove=None, contentToRemove=None):
     return res
 
 age_re = re.compile(r"(.*) ([0-9]+) let$")
-def get_name_age(row):
+def get_name_age(row: Tag) -> Tuple[str, int]:
     val = get_td_text(row, "col-name_")
     m = age_re.search(val)
     if not m:
@@ -46,7 +47,7 @@ def get_name_age(row):
     return m.group(1), int(m.group(2))
 
 price_re = re.compile(r'[0-9]+')
-def get_price(row):
+def get_price(row: Tag) -> Optional[Tuple[int, int]]:
     val = get_td_text(row, "col-price")
     m = price_re.findall(val)
     if len(val) == 0:
@@ -58,7 +59,7 @@ def get_price(row):
     return (int(m[0]), int(m[1]))
 
 num_re = re.compile(r'([0-9][0-9\s]+)\s')
-def get_num_from_text(txt):
+def get_num_from_text(txt: str) -> Optional[int]:
     m = num_re.search(txt)
     if m:
         number = int("".join([ c for c in m.group(1) if c in string.digits ]))
@@ -95,13 +96,13 @@ def process_main_page() -> Stats:
             res[kinds[idx]] = value #type: ignore
     return res
 
-def process_wish_page(typ, page, result):
+def process_wish_page(typ: int, page: int, result: Dict[str, List[Wish]], placeIdSet: Dict[str, Set[int]]) -> bool:
     typStr = "darek" if typ == 2 else "zazitek"
     params = {
-        "type": typ,
-        "grid-page": page,
+        "type": str(typ),
+        "grid-page": str(page),
         "locale": "cs",
-        "grid-per_page": 50,
+        "grid-per_page": str(50),
     }
     for i in range(5):
         req = requests.get("https://jeziskovavnoucata.rozhlas.cz/prani/" + typStr, params=params, timeout=30)
@@ -110,7 +111,7 @@ def process_wish_page(typ, page, result):
         print("Failed to download wishes #%d: %d %s", i, req.status_code, req.text, file=sys.stderr)
 
     if req.status_code != 200:
-        return
+        return False
 
     bs = BeautifulSoup(req.text, "html.parser")
 
@@ -120,23 +121,31 @@ def process_wish_page(typ, page, result):
         if not row.has_attr("data-id"):
             return False
 
+        place = get_td_text(row, "col-place")
+        idset = placeIdSet.setdefault(place, set())
+
+        id = int(row["data-id"])
+        if id in idset:
+            return False
+        idset.add(id)
+
         name, age = get_name_age(row)
         w = Wish(
-            id=int(row["data-id"]),
+            id=id,
             typ="dárek" if typ == 2 else "zážitek",
             name=name,
             age=age,
             thing=get_td_text(row, "col-description", suffixToRemove=" Proč si to přeji"),
             text=get_td_text(row, "col-descriptionWhy", contentToRemove=" ... více\xa0>>"),
-            place=get_td_text(row, "col-place"),
+            place=place,
             price=get_price(row),
         )
 
         print(w)
         result.setdefault(w.place, []).append(w)
-    return len(rows) >= params["grid-per_page"]
+    return len(rows) >= int(params["grid-per_page"])
 
-def get_coords(place):
+def get_coords(place: str) -> Optional[Tuple[float, float]]:
     params = {
         "format": "json",
         "q": place + ", Czechia",
@@ -163,8 +172,9 @@ if __name__ == "__main__":
     parser.add_argument("-b", "--backup-dir", help="Path where to store the backups", default="backup")
     args = parser.parse_args()
 
-    placeWishMap = {}
-    placeCoords = {}
+    placeWishMap: Dict[str, List[Wish]] = {}
+    placeCoords: Dict[str, Tuple[float, float]] = {}
+    placeIdSet: Dict[str, Set[int]] = {}
 
     try:
         with open("place_cache.json", "r") as f:
@@ -181,7 +191,7 @@ if __name__ == "__main__":
         more = True
         page = 1
         while more:
-            more = process_wish_page(typ, page, placeWishMap)
+            more = process_wish_page(typ, page, placeWishMap, placeIdSet)
             page += 1
 
     with ThreadPoolExecutor(max_workers=8) as ex:
