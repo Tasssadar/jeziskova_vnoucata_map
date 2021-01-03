@@ -242,6 +242,62 @@ function prepareMoneyGraph(stats) {
             }
         }
     });
+
+    new Chart("money_inc", {
+        type: 'line',
+        data: {
+            datasets: [
+                {
+                    data: stats.money_inc,
+                    label: "Přírůstek peněz",
+                    backgroundColor: "#1f5463",
+                    pointHoverRadius: 8,
+                    pointHoverBorderColor: "grey",
+                    pointRadius: 0,
+                }
+            ],
+        },
+        options: {
+            hover: {
+                intersect: false,
+            },
+            legend: {
+                display: false,
+            },
+            scales: {
+                yAxes: [{
+                    stacked: true,
+                    ticks: {
+                        callback: function(value, index, values) {
+                            return formatBigNum(value) + ' Kč';
+                        }
+                    },
+                }],
+                xAxes: [{
+                    type: "time",
+                    time: {
+                        parser: function(val) {
+                            return moment(val, "X")
+                        },
+                        unit: "hour",
+                        displayFormats: {
+                            hour: "D. MMM, H:mm",
+                        },
+                        tooltipFormat: "D. MMMM, H:mm"
+                    }
+                }]
+            },
+            tooltips: {
+                mode: 'index',
+                intersect: false,
+                callbacks: {
+                    label: function(it, data) {
+                        return data.datasets[it.datasetIndex].label + ": +" + formatBigNum(it.yLabel) + " Kč"
+                    }
+                }
+            }
+        }
+    });
 }
 
 function onMapDataLoad(req) {

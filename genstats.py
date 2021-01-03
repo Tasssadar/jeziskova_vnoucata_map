@@ -25,6 +25,7 @@ class TimePoint(TypedDict):
 class StatsResult(TypedDict):
     timestamp: int
     money: List[TimePoint]
+    money_inc: List[TimePoint]
     completed: List[TimePoint]
     inprogress: List[TimePoint]
     free: List[TimePoint]
@@ -98,6 +99,30 @@ def decimate_series(series: List[TimePoint]) -> List[TimePoint]:
             last_tm = p["t"]
     return res
 
+def generate_daily_inc(series: List[TimePoint]) -> List[TimePoint]:
+    if not series:
+        return []
+
+    res: List[TimePoint] = []
+    last_dt = datetime.fromtimestamp(series[0]["t"])
+    last_val = series[0]["y"]
+    inc = 0.0
+    for p in series[1:]:
+        dt = datetime.fromtimestamp(p["t"])
+        if dt.date() > last_dt.date():
+            delta = dt.date() - last_dt.date()
+            inc /= delta.days
+            if delta.days > 1:
+                last_val = p["y"]
+            for i in range(delta.days):
+                res.append({ "t": int(last_dt.timestamp() + i*86400), "y": int(inc) })
+            last_dt = dt
+            inc = 0
+        inc += p["y"] - last_val
+        last_val = p["y"]
+    res.append({ "t": int(last_dt.timestamp()), "y": int(inc) })
+    return res
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("output_file", help="Path to the JSON output", default="stats.json")
@@ -130,6 +155,7 @@ if __name__ == "__main__":
     stats_result: StatsResult = {
         "timestamp": int(time.time()),
         "money": [],
+        "money_inc": [],
         "completed": [],
         "inprogress": [],
         "free": [],
@@ -146,6 +172,8 @@ if __name__ == "__main__":
             val = stats.get(k, None)
             if val is not None:
                 stats_result[k].append({ "t": ts, "y": val}) # type:ignore
+
+    stats_result["money_inc"] = generate_daily_inc(stats_result["money"])
 
     for k, v in stats_result.items():
         if isinstance(v, list):
