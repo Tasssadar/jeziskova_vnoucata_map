@@ -151,13 +151,15 @@ function onDataLoad(req) {
 
     gMap = L.map('map').setView([49.7437572, 15.3386383], 8);
 
-    L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+    L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
         attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
             '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>' +
             ' | Přání &copy; <a href="https://jeziskovavnoucata.rozhlas.cz/">jeziskovavnoucata.rozhlas.cz</a>',
         maxZoom: 18,
-        id: 'mapbox.streets',
-        accessToken: 'pk.eyJ1IjoidGFzc2FkYXIiLCJhIjoiY2szMjB6bHhmMGJ3ajNscDlwbmMxamd1ZyJ9.9Kf65AGosFjB7zaWLIJywg'
+        id: 'mapbox/outdoors-v11',
+        accessToken: 'pk.eyJ1IjoidGFzc2FkYXIiLCJhIjoiY2szMjB6bHhmMGJ3ajNscDlwbmMxamd1ZyJ9.9Kf65AGosFjB7zaWLIJywg',
+        tileSize: 512,
+        zoomOffset: -1,
     }).addTo(gMap);
 
     var req = new XMLHttpRequest();
