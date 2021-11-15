@@ -104,14 +104,17 @@ def process_wish_page(typ: int, page: int, result: Dict[str, List[Wish]], placeI
         "locale": "cs",
         "grid-per_page": str(50),
     }
+    
+    last_ex = None
     for i in range(5):
         req = requests.get("https://jeziskovavnoucata.rozhlas.cz/prani/" + typStr, params=params, timeout=30)
         if req.status_code == 200:
             break
-        print("Failed to download wishes #%d: %d %s", i, req.status_code, req.text, file=sys.stderr)
+        last_ex = "Failed to download wishes #%d: %d %s" % (i, req.status_code, req.text)
+        print(last_ex, file=sys.stderr)
 
     if req.status_code != 200:
-        return False
+        raise Exception(last_ex)
 
     bs = BeautifulSoup(req.text, "html.parser")
 
