@@ -97,6 +97,9 @@ def decimate_series(series: List[TimePoint]) -> List[TimePoint]:
         if last_tm - p["t"] >= 8*60*60:
             res.insert(0, p)
             last_tm = p["t"]
+
+    if len(res) < 2:
+        return series
     return res
 
 def generate_daily_inc(series: List[TimePoint]) -> List[TimePoint]:

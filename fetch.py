@@ -58,7 +58,7 @@ def get_price(row: Tag) -> Optional[Tuple[int, int]]:
         return (int(m[0]), 1000000)
     return (int(m[0]), int(m[1]))
 
-num_re = re.compile(r'([0-9][0-9\s]+)\s')
+num_re = re.compile(r'([0-9][0-9\s]*)\s')
 def get_num_from_text(txt: str) -> Optional[int]:
     m = num_re.search(txt)
     if m:
