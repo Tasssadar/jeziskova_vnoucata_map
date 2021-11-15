@@ -67,14 +67,16 @@ def get_num_from_text(txt: str) -> Optional[int]:
     return None
 
 def process_main_page() -> Stats:
-    for i in range(5):
-        req = requests.get("https://jeziskovavnoucata.rozhlas.cz/", timeout=30)
+    last_ex = None
+    for i in range(10):
+        req = requests.get("https://jeziskovavnoucata.rozhlas.cz/", timeout=45)
         if req.status_code == 200:
             break
-        print("Failed to download wishes #%d: %d %s", i, req.status_code, req.text, file=sys.stderr)
+        last_ex = "Failed to download wishes #%d: %d %s" % (i, req.status_code, req.text)
+        print(last_ex, file=sys.stderr)
 
     if req.status_code != 200:
-        return {}
+        raise last_ex
 
     res: Stats = {}
 
@@ -106,46 +108,51 @@ def process_wish_page(typ: int, page: int, result: Dict[str, List[Wish]], placeI
     }
     
     last_ex = None
-    for i in range(5):
-        req = requests.get("https://jeziskovavnoucata.rozhlas.cz/prani/" + typStr, params=params, timeout=30)
-        if req.status_code == 200:
+    for i in range(10):
+        last_ex = None
+        
+        req = requests.get("https://jeziskovavnoucata.rozhlas.cz/prani/" + typStr, params=params, timeout=60)
+        if req.status_code != 200:
+            last_ex = "Failed to download wishes #%d: %d %s" % (i, req.status_code, req.text)
+            print(last_ex, file=sys.stderr)
+            continue
+        
+        bs = BeautifulSoup(req.text, "html.parser")
+        table = bs.find("tbody", id="snippet-grid-tbody")
+        rows = table.find_all("tr")
+        for row in rows:
+            if not row.has_attr("data-id"):
+                last_ex = "Failed to find data-id attr"
+                break
+
+            place = get_td_text(row, "col-place")
+            idset = placeIdSet.setdefault(place, set())
+
+            id = int(row["data-id"])
+            if id in idset:
+                continue
+            idset.add(id)
+
+            name, age = get_name_age(row)
+            w = Wish(
+                id=id,
+                typ="dárek" if typ == 2 else "zážitek",
+                name=name,
+                age=age,
+                thing=get_td_text(row, "col-description", suffixToRemove=" Proč si to přeji"),
+                text=get_td_text(row, "col-descriptionWhy", contentToRemove=" ... více\xa0>>"),
+                place=place,
+                price=get_price(row),
+            )
+
+            result.setdefault(w.place, []).append(w)
+        
+        if last_ex is None:
             break
-        last_ex = "Failed to download wishes #%d: %d %s" % (i, req.status_code, req.text)
-        print(last_ex, file=sys.stderr)
 
-    if req.status_code != 200:
+    if last_ex is not None:
         raise Exception(last_ex)
-
-    bs = BeautifulSoup(req.text, "html.parser")
-
-    table = bs.find("tbody", id="snippet-grid-tbody")
-    rows = table.find_all("tr")
-    for row in rows:
-        if not row.has_attr("data-id"):
-            return False
-
-        place = get_td_text(row, "col-place")
-        idset = placeIdSet.setdefault(place, set())
-
-        id = int(row["data-id"])
-        if id in idset:
-            return False
-        idset.add(id)
-
-        name, age = get_name_age(row)
-        w = Wish(
-            id=id,
-            typ="dárek" if typ == 2 else "zážitek",
-            name=name,
-            age=age,
-            thing=get_td_text(row, "col-description", suffixToRemove=" Proč si to přeji"),
-            text=get_td_text(row, "col-descriptionWhy", contentToRemove=" ... více\xa0>>"),
-            place=place,
-            price=get_price(row),
-        )
-
-        print(w)
-        result.setdefault(w.place, []).append(w)
+    
     return len(rows) >= int(params["grid-per_page"])
 
 def get_coords(place: str) -> Optional[Tuple[float, float]]:
@@ -196,7 +203,7 @@ if __name__ == "__main__":
         while more:
             more = process_wish_page(typ, page, placeWishMap, placeIdSet)
             page += 1
-
+    
     with ThreadPoolExecutor(max_workers=8) as ex:
         placeFutMap = {}
         for place in placeWishMap.keys():
